@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 from dotenv import load_dotenv
 
-from jev_mnist.classify import Prediction, classify, to_png
+from jev_mnist.classify import IMAGES_OPT_IN_HEADERS, Prediction, classify, to_png
 from jev_mnist.mnist import load_test_set
 
 DEFAULT_MODEL = "jev-preview"  # Points to jev-1.14.0.
@@ -150,7 +150,7 @@ async def run(args: argparse.Namespace) -> int:
 
     from typesafe_sdk import AsyncTypeSafeClient
 
-    async with AsyncTypeSafeClient(timeout=args.timeout) as client:
+    async with AsyncTypeSafeClient(timeout=args.timeout, headers=IMAGES_OPT_IN_HEADERS) as client:
         results = await evaluate(
             images,
             labels,

@@ -13,6 +13,8 @@ INSTRUCTIONS = (
     "(a white digit on a black background). Which digit (0-9) is it?"
 )
 DIGITS = [str(d) for d in range(10)]
+# Image input is experimental in Jev 1.14; the API rejects images without this opt-in header.
+IMAGES_OPT_IN_HEADERS = {"TypeSafe-Danger-Zone-Images": "true"}
 
 
 def to_png(pixels: np.ndarray, upscale: int = 4) -> bytes:
