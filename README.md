@@ -10,9 +10,11 @@ TypeSafe AI の **Jev 1.14**（画像入力対応）に MNIST の手書き数字
 
 ## セットアップ
 
+[mise](https://mise.jdx.dev/) で Python と [uv](https://docs.astral.sh/uv/) を用意し、uv で依存パッケージをインストールします（バージョンは `mise.toml`、依存のロックは `uv.lock`）。
+
 ```sh
-python -m venv .venv
-.venv/bin/pip install -e '.[test]'
+mise install                  # mise.toml の Python と uv をインストール
+uv sync --extra test          # uv.lock どおりに .venv へインストール
 export TYPESAFE_API_KEY=...   # TypeSafe AI の API キー
 ```
 
@@ -20,13 +22,13 @@ export TYPESAFE_API_KEY=...   # TypeSafe AI の API キー
 
 ```sh
 # テストセットの先頭 100 枚で評価（既定）
-.venv/bin/jev-mnist
+uv run jev-mnist
 
 # ランダムに 500 枚、16 並列、結果を CSV に保存
-.venv/bin/jev-mnist --limit 500 --seed 0 --concurrency 16 --output results.csv
+uv run jev-mnist --limit 500 --seed 0 --concurrency 16 --output results.csv
 
 # API を呼ばずに、送信する画像を data/samples/ に保存して確認
-.venv/bin/jev-mnist --dry-run --limit 10
+uv run jev-mnist --dry-run --limit 10
 ```
 
 MNIST テストセット（10,000 枚）は初回実行時に `data/` へダウンロードされます。
@@ -48,7 +50,7 @@ API エラーになった画像は「errors」として数え、処理は止め�
 ## テスト
 
 ```sh
-.venv/bin/pytest
+uv run pytest
 ```
 
 API キーやネットワークなしで動くオフラインテスト（MNIST パーサ、PNG 変換、集計）です。
