@@ -3,7 +3,7 @@
 import numpy as np
 
 from jev_mnist import errors
-from jev_mnist.errors import Filters, Row, read_rows, render_html, select_rows
+from jev_mnist.errors import Filters, Row, read_rows, render_html, select_rows, summary_html
 
 ROWS = [
     Row(0, 7, 7, 0.99, ""),
@@ -44,6 +44,13 @@ def test_render_html():
     assert "API error" in page
 
 
+def test_summary_html():
+    page = summary_html(ROWS)
+    assert "5 (answered: 4, errors: 1)" in page
+    assert "25.00% (1/4)" in page and "20.00% (1/5)" in page
+    assert "<tr><th>4</th><td>0</td><td>0</td><td>0</td><td>0</td><td class=\"diag\">0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>2</td></tr>" in page
+
+
 def test_main_end_to_end(tmp_path, monkeypatch):
     csv_path = tmp_path / "results.csv"
     csv_path.write_text(
@@ -56,5 +63,5 @@ def test_main_end_to_end(tmp_path, monkeypatch):
     monkeypatch.setattr(errors, "load_test_set", lambda data_dir: (np.zeros((3, 28, 28), dtype=np.uint8), np.array([7, 4, 2])))
     out = tmp_path / "errors.html"
     assert errors.main([str(csv_path), "--output", str(out)]) == 0
-    page = out.read_text()
+    page = out.read_text(encoding="utf-8")
     assert page.count("<img") == 1 and "#1" in page

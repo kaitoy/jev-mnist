@@ -108,7 +108,17 @@ From a CSV saved with `--output`, collect only the images Jev got wrong into an 
 ```
 
 By default, images are sorted by confidence, highest first. Main options: `--label`, `--prediction`, `--min-confidence`, `--max-confidence`,
-`--include-errors` (also include images that hit an API error), `--sort index`, `--limit`, `--output` (default `errors.html`).
+`--include-errors` (also include images that hit an API error), `--sort index`, `--limit`, `--title`, `--output` (default `errors.html`).
+The page also shows the accuracy, per-digit accuracy, and confusion matrix computed from the whole CSV.
+
+### Results pages (GitHub Pages)
+
+Each Jev version's results are published at <https://kaitoy.github.io/jev-mnist/> (served from `docs/` on `master`).
+To add a version, generate its page and add a link to it in `docs/index.html`:
+
+```sh
+uv run jev-mnist-errors results.csv --title "Jev 1.14" --output docs/jev-1.14/index.html
+```
 
 ## Tests
 
