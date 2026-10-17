@@ -50,6 +50,20 @@ API エラーになった画像は「errors」として数え、処理は止め�
 | `--output` | なし | 画像ごとの結果を書き出す CSV |
 | `--dry-run` | - | API を呼ばず画像だけ保存 |
 
+## 間違えた画像を見る
+
+`--output` で保存した CSV から、Jev が間違えた画像だけを HTML ギャラリーにまとめます（API は呼びません）。
+
+```sh
+.venv/bin/jev-mnist --limit 500 --seed 0 --output results.csv
+.venv/bin/jev-mnist-errors results.csv                         # 間違えた画像すべて → errors.html
+.venv/bin/jev-mnist-errors results.csv --label 4 --prediction 9  # 正解 4 を 9 と答えたものだけ
+.venv/bin/jev-mnist-errors results.csv --min-confidence 0.9      # 自信満々で間違えたものだけ
+```
+
+既定では確信度の高い順に並びます。主なオプション: `--label`, `--prediction`, `--min-confidence`, `--max-confidence`,
+`--include-errors`（API エラーの画像も含める）, `--sort index`, `--limit`, `--output`（既定 `errors.html`）。
+
 ## テスト
 
 ```sh

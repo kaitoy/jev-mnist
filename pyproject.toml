@@ -20,6 +20,7 @@ test = ["pytest>=8"]
 
 [project.scripts]
 jev-mnist = "jev_mnist.main:main"
+jev-mnist-errors = "jev_mnist.errors:main"
 
 [tool.setuptools]
 packages = ["jev_mnist"]
