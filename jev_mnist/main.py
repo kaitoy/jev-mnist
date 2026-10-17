@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 from dotenv import load_dotenv
 
-from jev_mnist.classify import IMAGES_OPT_IN_HEADERS, Prediction, classify, to_png
+from jev_mnist.classify import DEFAULT_UPSCALE, IMAGES_OPT_IN_HEADERS, MAX_IMAGE_SIDE, MIN_IMAGE_SIDE, Prediction, classify, to_png
 from jev_mnist.mnist import load_test_set
 
 DEFAULT_MODEL = "jev-preview"  # Points to jev-1.14.0.
@@ -128,12 +128,18 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, help="sample --limit images at random with this seed instead of using --offset")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"model name (default: {DEFAULT_MODEL})")
     parser.add_argument("--concurrency", type=int, default=8, help="parallel requests (default: 8)")
-    parser.add_argument("--upscale", type=int, default=4, help="enlarge the 28x28 images by this factor (default: 4)")
+    parser.add_argument(
+        "--upscale", type=int, default=DEFAULT_UPSCALE, help=f"enlarge the 28x28 images by this factor (default: {DEFAULT_UPSCALE})"
+    )
     parser.add_argument("--timeout", type=float, default=60.0, help="per-request timeout in seconds (default: 60)")
     parser.add_argument("--data-dir", type=Path, default=Path("data"), help="MNIST cache directory (default: data)")
     parser.add_argument("--output", type=Path, help="write per-image results to this CSV file")
     parser.add_argument("--dry-run", action="store_true", help="save the selected images as PNG without calling the API")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    side = 28 * args.upscale
+    if not args.dry_run and not MIN_IMAGE_SIDE <= side <= MAX_IMAGE_SIDE:
+        parser.error(f"--upscale {args.upscale} makes {side}x{side} images; the API accepts {MIN_IMAGE_SIDE}-{MAX_IMAGE_SIDE} pixels per side")
+    return args
 
 
 async def run(args: argparse.Namespace) -> int:

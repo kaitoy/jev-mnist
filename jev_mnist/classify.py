@@ -15,9 +15,13 @@ INSTRUCTIONS = (
 DIGITS = [str(d) for d in range(10)]
 # Image input is experimental in Jev 1.14; the API rejects images without this opt-in header.
 IMAGES_OPT_IN_HEADERS = {"TypeSafe-Danger-Zone-Images": "true"}
+# The API rejects (never resizes) images whose sides fall outside this range, with "400 Invalid image dimensions".
+MIN_IMAGE_SIDE = 280
+MAX_IMAGE_SIDE = 1568
+DEFAULT_UPSCALE = 10  # 28 * 10 = 280 pixels per side, the smallest accepted size.
 
 
-def to_png(pixels: np.ndarray, upscale: int = 4) -> bytes:
+def to_png(pixels: np.ndarray, upscale: int = DEFAULT_UPSCALE) -> bytes:
     """Encode a 28x28 grayscale array as PNG, enlarged with nearest-neighbor scaling."""
     image = PIL.Image.fromarray(pixels, mode="L")
     if upscale > 1:
