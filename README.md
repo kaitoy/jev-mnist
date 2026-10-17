@@ -8,6 +8,51 @@ A program that shows MNIST handwritten digit images to TypeSafe AI's **Jev 1.14*
 
 > Image input in Jev 1.14 is positioned by TypeSafe as an "experimental preview" feature.
 
+## Results (Jev 1.14)
+
+The full MNIST test set (10,000 images), default settings (10x upscale, 8 concurrent requests):
+
+```sh
+uv run jev-mnist --limit 10000 --output results.csv
+```
+
+| Metric | Value |
+|---|---|
+| Model | `jev-1.14.0` |
+| Samples | 10,000 (answered: 10,000, errors: 0) |
+| Accuracy | **92.45%** (9245/10000) |
+| Input tokens | 5,942,745 |
+| Latency per image | mean 0.17s, median 0.15s, p95 0.30s, min 0.13s, max 1.38s |
+| Total time | 216.5s (46.18 images/s) |
+
+Per-digit accuracy:
+
+| Digit | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Accuracy | 91.43% | 98.68% | 90.12% | 96.34% | 90.94% | 93.61% | 85.49% | 98.25% | 85.73% | 92.57% |
+| Correct / total | 896/980 | 1120/1135 | 930/1032 | 973/1010 | 893/982 | 835/892 | 819/958 | 1010/1028 | 835/974 | 934/1009 |
+
+Confusion matrix (rows = label, columns = prediction):
+
+| | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **0** | **896** | 1 | 2 | 0 | 0 | 0 | 19 | 30 | 1 | 31 |
+| **1** | 0 | **1120** | 0 | 0 | 0 | 0 | 0 | 15 | 0 | 0 |
+| **2** | 1 | 3 | **930** | 3 | 1 | 0 | 7 | 56 | 0 | 31 |
+| **3** | 0 | 0 | 8 | **973** | 0 | 17 | 0 | 10 | 1 | 1 |
+| **4** | 1 | 0 | 0 | 0 | **893** | 0 | 0 | 86 | 0 | 2 |
+| **5** | 0 | 1 | 11 | 1 | 0 | **835** | 16 | 25 | 0 | 3 |
+| **6** | 0 | 5 | 8 | 0 | 8 | 0 | **819** | 88 | 0 | 30 |
+| **7** | 0 | 0 | 7 | 1 | 6 | 0 | 0 | **1010** | 0 | 4 |
+| **8** | 0 | 0 | 10 | 2 | 2 | 3 | 19 | 34 | **835** | 69 |
+| **9** | 1 | 3 | 0 | 1 | 44 | 1 | 3 | 22 | 0 | **934** |
+
+Observations:
+
+- 1 (98.68%) and 7 (98.25%) are recognized best; 6 (85.49%) and 8 (85.73%) are the weakest.
+- Jev is strongly biased toward answering "7": 366 of the 755 errors (48%) are wrong "7"s, most often for 6 (88), 4 (86), and 2 (56).
+- "9" is the second most common wrong answer (171 errors, led by 8→9 at 69), and 9 is often mistaken for 4 (44).
+
 ## Setup
 
 Use [mise](https://mise.jdx.dev/) to provide Python and [uv](https://docs.astral.sh/uv/), then install the dependencies with uv (versions are in `mise.toml`, and the dependency lock is in `uv.lock`).
