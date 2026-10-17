@@ -50,6 +50,10 @@ def test_evaluate_and_report():
     assert "Accuracy (answered): 66.67% (2/3)" in text
     assert "Accuracy (all):      50.00% (2/4)" in text
     assert "errors: 1" in text
+    assert all(r.latency is not None and r.latency >= 0 for r in results)
+    assert "Latency per image (answered): mean" in text
+    assert "Total time" not in text
+    assert "throughput: 2.00 images/s" in report(results, elapsed=2.0)
 
 
 def test_select_indices():

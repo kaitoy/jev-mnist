@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import csv
 import sys
+import time
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,6 +26,7 @@ class Result:
     label: int
     prediction: Prediction | None
     error: str | None = None
+    latency: float | None = None  # Seconds the classifier call took.
 
     @property
     def correct(self) -> bool:
@@ -48,10 +50,13 @@ async def evaluate(
         nonlocal done
         label = int(labels[index])
         async with semaphore:
+            png = to_png(images[index], upscale)
+            start = time.perf_counter()
             try:
-                result = Result(index, label, await classifier(to_png(images[index], upscale)))
+                result = Result(index, label, await classifier(png))
             except Exception as error:  # noqa: BLE001 - Count API failures instead of aborting the run.
                 result = Result(index, label, None, f"{type(error).__name__}: {error}")
+            result.latency = time.perf_counter() - start
         done += 1
         if progress:
             correct = "o" if result.correct else ("!" if result.error else "x")
@@ -72,7 +77,7 @@ def confusion_matrix(results: Sequence[Result]) -> np.ndarray:
     return matrix
 
 
-def report(results: Sequence[Result]) -> str:
+def report(results: Sequence[Result], elapsed: float | None = None) -> str:
     answered = [r for r in results if r.prediction is not None]
     correct = sum(r.correct for r in results)
     lines = []
@@ -85,6 +90,14 @@ def report(results: Sequence[Result]) -> str:
     if results:
         lines.append(f"Accuracy (all):      {correct / len(results):.2%} ({correct}/{len(results)})")
     lines.append(f"Input tokens: {sum(r.prediction.input_tokens for r in answered)}")
+    latencies = [r.latency for r in answered if r.latency is not None]
+    if latencies:
+        lines.append(
+            f"Latency per image (answered): mean {np.mean(latencies):.2f}s  median {np.median(latencies):.2f}s  "
+            f"p95 {np.percentile(latencies, 95):.2f}s  min {min(latencies):.2f}s  max {max(latencies):.2f}s"
+        )
+    if elapsed is not None and elapsed > 0:
+        lines.append(f"Total time: {elapsed:.1f}s  throughput: {len(results) / elapsed:.2f} images/s")
 
     matrix = confusion_matrix(results)
     lines.append("")
@@ -109,10 +122,11 @@ def report(results: Sequence[Result]) -> str:
 def write_csv(results: Sequence[Result], path: Path) -> None:
     with path.open("w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["index", "label", "prediction", "confidence", "correct", "error"])
+        writer.writerow(["index", "label", "prediction", "confidence", "correct", "error", "latency_ms"])
         for r in results:
             p = r.prediction
-            writer.writerow([r.index, r.label, p.digit if p else "", f"{p.confidence:.4f}" if p else "", r.correct, r.error or ""])
+            latency = f"{r.latency * 1000:.0f}" if r.latency is not None else ""
+            writer.writerow([r.index, r.label, p.digit if p else "", f"{p.confidence:.4f}" if p else "", r.correct, r.error or "", latency])
 
 
 def select_indices(total: int, limit: int, offset: int, seed: int | None) -> list[int]:
@@ -157,6 +171,7 @@ async def run(args: argparse.Namespace) -> int:
     from typesafe_sdk import AsyncTypeSafeClient
 
     async with AsyncTypeSafeClient(timeout=args.timeout, headers=IMAGES_OPT_IN_HEADERS) as client:
+        start = time.perf_counter()
         results = await evaluate(
             images,
             labels,
@@ -165,7 +180,8 @@ async def run(args: argparse.Namespace) -> int:
             concurrency=args.concurrency,
             upscale=args.upscale,
         )
-    print(report(results))
+        elapsed = time.perf_counter() - start
+    print(report(results, elapsed))
     if args.output:
         write_csv(results, args.output)
         print(f"\nWrote {args.output}")
