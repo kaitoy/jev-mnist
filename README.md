@@ -15,8 +15,11 @@ TypeSafe AI の **Jev 1.14**（画像入力対応）に MNIST の手書き数字
 ```sh
 mise install                  # mise.toml の Python と uv をインストール
 uv sync --extra test          # uv.lock どおりに .venv へインストール
-export TYPESAFE_API_KEY=...   # TypeSafe AI の API キー
+cp .env.example .env          # .env に TypeSafe AI の API キーを書く
 ```
+
+API キーは `.env` の `TYPESAFE_API_KEY` に書いておけば起動時に読み込まれます（`.env` は Git 管理外）。
+環境変数 `TYPESAFE_API_KEY` が設定されている場合はそちらが優先されます。
 
 ## 実行
 

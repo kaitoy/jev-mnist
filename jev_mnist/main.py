@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from dotenv import load_dotenv
 
 from jev_mnist.classify import Prediction, classify, to_png
 from jev_mnist.mnist import load_test_set
@@ -166,6 +167,7 @@ async def run(args: argparse.Namespace) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    load_dotenv()  # Read TYPESAFE_API_KEY etc. from .env; real environment variables take precedence.
     return asyncio.run(run(parse_args(argv)))
 
 
