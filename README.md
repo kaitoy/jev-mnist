@@ -1,74 +1,74 @@
 # jev-mnist
 
-TypeSafe AI の **Jev 1.14**（画像入力対応）に MNIST の手書き数字画像を見せて 0〜9 のどれかを答えさせ、正解率を計測するプログラムです。
+A program that shows MNIST handwritten digit images to TypeSafe AI's **Jev 1.14** (which supports image input), asks it which digit from 0 to 9 each one is, and measures its accuracy.
 
-- 画像は 28x28 のグレースケールを PNG にし（既定で 10 倍に拡大して 280x280）、`typesafe_sdk.Image` として `state` に渡します。
-- 質問は `Choice`（選択肢 `"0"`〜`"9"`）で、Jev が最も確率の高い数字を返します。
-- 既定モデルは `jev-preview`（Jev 1.14.0 を指すエイリアス）。`--model` で変更できます。
+- Each 28x28 grayscale image is converted to PNG (upscaled 10x to 280x280 by default) and passed in `state` as a `typesafe_sdk.Image`.
+- The question is a `Choice` (options `"0"` to `"9"`), and Jev returns the digit with the highest probability.
+- The default model is `jev-preview` (an alias pointing to Jev 1.14.0). It can be changed with `--model`.
 
-> Jev 1.14 の画像入力は TypeSafe 社が「実験的プレビュー」と位置づけている機能です。
+> Image input in Jev 1.14 is positioned by TypeSafe as an "experimental preview" feature.
 
-## セットアップ
+## Setup
 
-[mise](https://mise.jdx.dev/) で Python と [uv](https://docs.astral.sh/uv/) を用意し、uv で依存パッケージをインストールします（バージョンは `mise.toml`、依存のロックは `uv.lock`）。
+Use [mise](https://mise.jdx.dev/) to provide Python and [uv](https://docs.astral.sh/uv/), then install the dependencies with uv (versions are in `mise.toml`, and the dependency lock is in `uv.lock`).
 
 ```sh
-mise install                  # mise.toml の Python と uv をインストール
-uv sync --extra test          # uv.lock どおりに .venv へインストール
-cp .env.example .env          # .env に TypeSafe AI の API キーを書く
+mise install                  # Install Python and uv as specified in mise.toml
+uv sync --extra test          # Install into .venv exactly as locked in uv.lock
+cp .env.example .env          # Put your TypeSafe AI API key in .env
 ```
 
-API キーは `.env` の `TYPESAFE_API_KEY` に書いておけば起動時に読み込まれます（`.env` は Git 管理外）。
-環境変数 `TYPESAFE_API_KEY` が設定されている場合はそちらが優先されます。
+If you put your API key in `TYPESAFE_API_KEY` in `.env`, it is loaded at startup (`.env` is not tracked by Git).
+If the `TYPESAFE_API_KEY` environment variable is set, it takes precedence.
 
-## 実行
+## Usage
 
 ```sh
-# テストセットの先頭 100 枚で評価（既定）
+# Evaluate on the first 100 images of the test set (default)
 uv run jev-mnist
 
-# ランダムに 500 枚、16 並列、結果を CSV に保存
+# 500 random images, 16 in parallel, save the results to CSV
 uv run jev-mnist --limit 500 --seed 0 --concurrency 16 --output results.csv
 
-# API を呼ばずに、送信する画像を data/samples/ に保存して確認
+# Don't call the API; save the images that would be sent to data/samples/ for inspection
 uv run jev-mnist --dry-run --limit 10
 ```
 
-MNIST テストセット（10,000 枚）は初回実行時に `data/` へダウンロードされます。
-出力には正解率（応答できた分／全体）、数字ごとの正解率、混同行列、入力トークン数、実際に応答したモデル名、判定速度（1 枚あたりの応答時間の平均・中央値・p95・最小・最大と、全体の所要時間・スループット）が表示されます。
-`--output` の CSV には画像ごとの応答時間が `latency_ms` 列（ミリ秒）として入ります。
-API エラーになった画像は「errors」として数え、処理は止めません。
+The MNIST test set (10,000 images) is downloaded to `data/` on the first run.
+The output shows the accuracy (answered / total), per-digit accuracy, the confusion matrix, input token counts, the name of the model that actually responded, and classification speed (mean, median, p95, min, and max response time per image, plus total elapsed time and throughput).
+In the `--output` CSV, the response time for each image is recorded in the `latency_ms` column (milliseconds).
+Images that hit an API error are counted as "errors", and processing does not stop.
 
-| オプション | 既定値 | 説明 |
+| Option | Default | Description |
 |---|---|---|
-| `--limit` | 100 | 評価する画像の枚数 |
-| `--offset` | 0 | 先頭から評価する場合の開始位置 |
-| `--seed` | なし | 指定するとランダムに `--limit` 枚を抽出 |
-| `--model` | `jev-preview` | 使用するモデル |
-| `--concurrency` | 8 | 同時リクエスト数 |
-| `--upscale` | 10 | 画像の拡大倍率（API は 1 辺 280〜1568px のみ受け付けるため 10〜56） |
-| `--timeout` | 60 | リクエストごとのタイムアウト（秒） |
-| `--output` | なし | 画像ごとの結果を書き出す CSV |
-| `--dry-run` | - | API を呼ばず画像だけ保存 |
+| `--limit` | 100 | Number of images to evaluate |
+| `--offset` | 0 | Starting position when evaluating from the beginning |
+| `--seed` | none | If set, randomly sample `--limit` images |
+| `--model` | `jev-preview` | Model to use |
+| `--concurrency` | 8 | Number of concurrent requests |
+| `--upscale` | 10 | Image upscale factor (10–56, since the API only accepts 280–1568px per side) |
+| `--timeout` | 60 | Per-request timeout (seconds) |
+| `--output` | none | CSV file to write per-image results to |
+| `--dry-run` | - | Save images only, without calling the API |
 
-## 間違えた画像を見る
+## Viewing misclassified images
 
-`--output` で保存した CSV から、Jev が間違えた画像だけを HTML ギャラリーにまとめます（API は呼びません）。
+From a CSV saved with `--output`, collect only the images Jev got wrong into an HTML gallery (does not call the API).
 
 ```sh
 .venv/bin/jev-mnist --limit 500 --seed 0 --output results.csv
-.venv/bin/jev-mnist-errors results.csv                         # 間違えた画像すべて → errors.html
-.venv/bin/jev-mnist-errors results.csv --label 4 --prediction 9  # 正解 4 を 9 と答えたものだけ
-.venv/bin/jev-mnist-errors results.csv --min-confidence 0.9      # 自信満々で間違えたものだけ
+.venv/bin/jev-mnist-errors results.csv                         # All misclassified images → errors.html
+.venv/bin/jev-mnist-errors results.csv --label 4 --prediction 9  # Only true 4s answered as 9
+.venv/bin/jev-mnist-errors results.csv --min-confidence 0.9      # Only confident mistakes
 ```
 
-既定では確信度の高い順に並びます。主なオプション: `--label`, `--prediction`, `--min-confidence`, `--max-confidence`,
-`--include-errors`（API エラーの画像も含める）, `--sort index`, `--limit`, `--output`（既定 `errors.html`）。
+By default, images are sorted by confidence, highest first. Main options: `--label`, `--prediction`, `--min-confidence`, `--max-confidence`,
+`--include-errors` (also include images that hit an API error), `--sort index`, `--limit`, `--output` (default `errors.html`).
 
-## テスト
+## Tests
 
 ```sh
 uv run pytest
 ```
 
-API キーやネットワークなしで動くオフラインテスト（MNIST パーサ、PNG 変換、集計）です。
+Offline tests (MNIST parser, PNG conversion, aggregation) that run without an API key or network access.
